@@ -1,4 +1,5 @@
 const courseRoutes = require("./courses");
+const studentRoutes = require("./students");
 
 const appRouter = (app, fs) => {
   app.get("/", (req, res) => {
@@ -6,6 +7,7 @@ const appRouter = (app, fs) => {
   });
 
   courseRoutes(app, fs);
+  studentRoutes(app, fs);
 };
 
 module.exports = appRouter;
