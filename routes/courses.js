@@ -1,77 +1,98 @@
 const courseRoutes = (app, fs) => {
 
-    const dataPath = './data/courses.json';
+    const coursePath = './data/courses.json';
+    const studentPath = './data/students.json';
 
-    const readFile = (callback, returnJson = false, filePath = dataPath, encoding = 'utf8') => {
-        fs.readFile(filePath, encoding, (err, data) => {
-            if (err) {
-                throw err;
-            }
+    app.get("/courses", (req, res) => {
+        let courses = JSON.parse(fs.readFileSync(coursePath));
+        res.send({ courses });
+      });
 
-            callback(returnJson ? JSON.parse(data) : data);
+    app.get("/courses/:id", (req, res) => {
+        let courses = JSON.parse(fs.readFileSync(coursePath));
+        let course = courses.find((course) => {
+          return course.id == req.params.id;
         });
-    };
+        if (!course) return res.status(400).json({error: `No course available with ID ${req.params.id}`});
+        res.send({ course });
+    });
 
-    const writeFile = (fileData, callback, filePath = dataPath, encoding = 'utf8') => {
+    app.post("/courses", (req, res) => {
+        let name = req.body.name;
+        let description = req.body.description;
+        let slots = req.body.slots;
 
-        fs.writeFile(filePath, fileData, encoding, (err) => {
-            if (err) {
-                throw err;
-            }
+        if (!name || !slots ||!description ) {
+          return res.status(400).json({ error: "Unidentified" });
+        }
+        let data = JSON.parse(fs.readFileSync(coursePath));
 
-            callback();
-        });
-    };
-
-    app.get('/courses', (req, res) => {
-        fs.readFile(dataPath, 'utf8', (err, data) => {
-            if (err) {
-                throw err;
-            }
-
-            res.send(JSON.parse(data));
+        data.push({ id: data.length + 1, name, description, slots });
+        jsonData = JSON.stringify(data, null, 2);
+        fs.writeFile(coursePath, jsonData, "utf8", () => {
+        res.json({ success: true });
         });
     });
 
-    app.post('/courses', (req, res) => {
+    app.post("/courses/:id/enroll", (req, res) => {
+        const courseId = req.params.id;
+        const studentId = req.body.studentId;
+        let courses = JSON.parse(fs.readFileSync(coursePath, "utf8"));
+        let students = JSON.parse(fs.readFileSync(studentPath, "utf8"));
+     
+        const course = courses.data.find((course) => {
+          return course.id === parseInt(courseId);
+        });
+        const student = students.data.find((student) => {
+          return student.id === parseInt(studentId);
+        });
+        if (!course) {
+          return res.status(400).json({ error: `No such course or student exist` });
+        }
 
-        readFile(data => {
-            const newCourseId = Object.keys(data).length + 1;
-            data[newCourseId.toString()] = req.body;
+        if (course.slots < 1) {
+          return res.json({ success: false});
+        }
+   
+        courses.data[courseId - 1].enrolledStudents.push({
+          id: student.id,
+          name: student.name,
+        });
+        jsonData = JSON.stringify(courses, null, 2);
+        fs.writeFile(coursePath, jsonData, "utf8", () => {
+          res.json({ success: true });
+        });
+      });
 
-            writeFile(JSON.stringify(data, null, 2), () => {
-                res.status(200).send('new course added');
-            });
-        },
-            true);
-    });
+    app.put("/courses/:id/deregister", (req, res) => {
+        const courseId = req.params.id;
+        const studentId = req.body.studentId;
+        let courses = JSON.parse(fs.readFileSync(coursePath, "utf8"));
+        let students = JSON.parse(fs.readFileSync(studentPath, "utf8"));
 
-    app.put('/courses/:id', (req, res) => {
-
-        readFile(data => {
-
-            const courseId = req.params["id"];
-            data[courseId] = req.body;
-
-            writeFile(JSON.stringify(data, null, 2), () => {
-                res.status(200).send(`courses id:${courseId} updated`);
-            });
-        },
-            true);
-    });
-
-
-    app.delete('/courses/:id', (req, res) => {
-
-        readFile(data => {
-            const courseId = req.params["id"];
-            delete data[courseId];
-
-            writeFile(JSON.stringify(data, null, 2), () => {
-                res.status(200).send(`courses id:${courseId} removed`);
-            });
-        },
-            true);
+        const course = courses.data.find((course) => {
+          return course.id === parseInt(courseId);
+        });
+        if (!course) {
+          return res.status(400).json({ error: `No such course with id ${courseId}`});
+        }
+        let enrolledStudents = courses.data[courseId - 1].enrolledStudents;
+    
+        const available = enrolledStudents.find((student) => {
+        return student.id == req.params.studentId;
+        });
+        if (!available) {
+          return res.json({success: false });
+        }
+  
+        let newEnrolledStudents = enrolledStudents.filter((student) => {
+          return student.id !== parseInt(studentId);
+        });
+        courses.data[courseId - 1].enrolledStudents = newEnrolledStudents;
+        jsonData = JSON.stringify(courses, null, 2);
+        fs.writeFile(coursePath, jsonData, "utf8", () => {
+          res.json({ success: true });
+        });
     });
 };
 
