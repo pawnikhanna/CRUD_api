@@ -1,14 +1,20 @@
-{
-  "1": {
+[
+  {
     "id": 1,
-    "name": "course 1"
+    "name": "course 1",
+    "slots": 1,
+    "enrolledStudents": []
   },
-  "2": {
+  {
     "id": 2,
-    "name": "course 2"
+    "name": "course 2",
+    "slots": 0,
+    "enrolledStudents": []
   },
-  "3": {
+  {
     "id": 3,
-    "name": "course 3"
-  }
-}
+    "name": "course 3",
+    "slots": 5,
+    "enrolledStudents": []
+  } 
+]
