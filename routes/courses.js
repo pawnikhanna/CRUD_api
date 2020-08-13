@@ -28,8 +28,7 @@ const courseRoutes = (app, fs) => {
         let data = JSON.parse(fs.readFileSync(coursePath));
 
         data.push({ id: data.length + 1, name, description, slots });
-        jsonData = JSON.stringify(data, null, 2);
-        fs.writeFile(coursePath, jsonData, "utf8", () => {
+        fs.writeFile(coursePath, JSON.stringify(courses, null, 2) , "utf8", () => {
         res.json({ success: true });
         });
     });
@@ -40,26 +39,25 @@ const courseRoutes = (app, fs) => {
         let courses = JSON.parse(fs.readFileSync(coursePath, "utf8"));
         let students = JSON.parse(fs.readFileSync(studentPath, "utf8"));
      
-        const course = courses.data.find((course) => {
+        const course = courses.find((course) => {
           return course.id === parseInt(courseId);
         });
-        const student = students.data.find((student) => {
+        const student = students.find((student) => {
           return student.id === parseInt(studentId);
         });
-        if (!course) {
+        if (!course || !student) {
           return res.status(400).json({ error: `No such course or student exist` });
         }
 
         if (course.slots < 1) {
-          return res.json({ success: false});
+          return res.json({ success: false, msg: "No slots available"});
         }
    
-        courses.data[courseId - 1].enrolledStudents.push({
+        courses[courseId - 1].enrolledStudents.push({
           id: student.id,
           name: student.name,
         });
-        jsonData = JSON.stringify(courses, null, 2);
-        fs.writeFile(coursePath, jsonData, "utf8", () => {
+        fs.writeFile(coursePath, JSON.stringify(courses, null, 2), "utf8", () => {
           res.json({ success: true });
         });
       });
@@ -68,29 +66,27 @@ const courseRoutes = (app, fs) => {
         const courseId = req.params.id;
         const studentId = req.body.studentId;
         let courses = JSON.parse(fs.readFileSync(coursePath, "utf8"));
-        let students = JSON.parse(fs.readFileSync(studentPath, "utf8"));
 
-        const course = courses.data.find((course) => {
+        const course = courses.find((course) => {
           return course.id === parseInt(courseId);
         });
         if (!course) {
           return res.status(400).json({ error: `No such course with id ${courseId}`});
         }
-        let enrolledStudents = courses.data[courseId - 1].enrolledStudents;
+        let enrolledStudents = courses[courseId - 1].enrolledStudents;
     
-        const available = enrolledStudents.find((student) => {
-        return student.id == req.params.studentId;
+        const available = enrolledStudents.some((student) => {
+          return student.id === parseInt(studentId);
         });
         if (!available) {
-          return res.json({success: false });
+          return res.json({success: false, msg: `No student with id ${studentId}`});
         }
   
         let newEnrolledStudents = enrolledStudents.filter((student) => {
           return student.id !== parseInt(studentId);
         });
         courses.data[courseId - 1].enrolledStudents = newEnrolledStudents;
-        jsonData = JSON.stringify(courses, null, 2);
-        fs.writeFile(coursePath, jsonData, "utf8", () => {
+        fs.writeFile(coursePath, JSON.stringify(courses, null, 2) , "utf8", () => {
           res.json({ success: true });
         });
     });
