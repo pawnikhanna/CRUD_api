@@ -19,16 +19,22 @@ const courseRoutes = (app, fs) => {
 
     app.post("/courses", (req, res) => {
         let name = req.body.name;
-        let description = req.body.description;
         let slots = req.body.slots;
+        let enrolledStudents = req.body.enrolledStudents;
 
-        if (!name || !slots ||!description ) {
+        if (!name || !slots || !enrolledStudents) {
           return res.status(400).json({ error: "Unidentified" });
         }
         let data = JSON.parse(fs.readFileSync(coursePath));
 
-        data.push({ id: data.length + 1, name, description, slots });
-        fs.writeFile(coursePath, JSON.stringify(courses, null, 2) , "utf8", () => {
+        if(data.slots > 0){
+          data.push({ id: data.length + 1, name, slots, enrolledStudents });
+        }
+        else{
+          return res.status(400).json({ error: `Slots cannot be negative` });
+        }
+        
+        fs.writeFile(coursePath, JSON.stringify(data, null, 2) , "utf8", () => {
         res.json({ success: true });
         });
     });
@@ -66,36 +72,32 @@ const courseRoutes = (app, fs) => {
       });
 
     app.put("/courses/:id/deregister", (req, res) => {
-        const courseId = req.params.id;
-        const studentId = req.body.studentId;
-        let courses = JSON.parse(fs.readFileSync(coursePath, "utf8"));
-        let students = JSON.parse(fs.readFileSync(studentPath, "utf8"));
-
-        const course = courses.find((course) => {
-          return course.id === parseInt(courseId);
-        });
-
-        if (!course) {
-          return res.status(400).json({ error: `No such course with id ${courseId} found`});
-        }
-
-        course.slots +=1;
-        let enrolledStudents = course.enrolledStudents;
+      const courseId = req.params.id;
+      const studentId = req.body.studentId;
+      let courses = JSON.parse(fs.readFileSync(coursePath, "utf8"));
     
-        const studentAvailable = enrolledStudents.find((student) => {
-          return student.id === parseInt(studentId);
-        });
-        if (!studentAvailable) {
-          return res.json({success: false, msg: `No such student with id ${studentId}`});
-        }
+      const course = courses.find((course) => {
+        return course.id === parseInt(courseId);
+      });
+      if (!course) {
+        return res.status(400).json({ error: `No course with id ${courseId} exist` });
+      }
+      let enrolledStudents = course.enrolledStudents;
+    
+      const found = enrolledStudents.some((student) => {
+        return student.id === parseInt(studentId);
+      });
+      if (!found) {
+        return res.status(400).json({ error: `No student with id ${studentId} enrolled.` });
+      }
   
-        let newEnrolledStudents = enrolledStudents.filter((student) => {
-          return student.id !== parseInt(studentId);
-        });
-        courses.data[courseId - 1].enrolledStudents = newEnrolledStudents;
-        fs.writeFile(coursePath, JSON.stringify(courses, null, 2) , "utf8", () => {
-          res.json({ success: true });
-        });
+      let newEnrolledStudents = enrolledStudents.filter((student) => {
+        return student.id !== parseInt(studentId);
+      });
+      course.enrolledStudents = newEnrolledStudents;
+      fs.writeFile(coursePath, JSON.stringify(courses, null, 2) , "utf8", () => {
+        res.json({ success: true });
+      });
     });
 };
 
