@@ -2,19 +2,18 @@
   {
     "id": 1,
     "name": "course 1",
-    "slots": 1,
+    "slots": 0,
     "enrolledStudents": []
   },
   {
     "id": 2,
     "name": "course 2",
     "slots": 0,
-    "enrolledStudents": []
-  },
-  {
-    "id": 3,
-    "name": "course 3",
-    "slots": 5,
-    "enrolledStudents": []
-  } 
+    "enrolledStudents": [
+      {
+        "id": 3,
+        "name": "test"
+      }
+    ]
+  }
 ]
