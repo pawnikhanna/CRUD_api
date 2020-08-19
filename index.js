@@ -1,15 +1,13 @@
-const express = require("express");
-const bodyParser = require("body-parser");
+const express = require('express')
+const app = express()
+const bodyParser = require('body-parser')
 
-const app = express();
-
-const fs = require("fs");
-
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use("/auth",require("./routes/auth"));
+app.use("/courses", require("./routes/courses"));
+app.use("/students", require("./routes/students"));
 
-const routes = require("./routes/routes.js")(app, fs);
-
-const server = app.listen(3001, () => {
-  console.log("listening on port %s...", server.address().port);
-});
+app.listen(3001, () =>
+    console.log("Server started")
+)
